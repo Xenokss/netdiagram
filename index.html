@@ -205,6 +205,7 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
 .form-group input::placeholder{color:var(--txs)}
 .form-submit{width:100%;padding:14px;background:var(--acc);border:none;border-radius:9px;color:#0a0a09;font-size:15px;font-weight:700;cursor:none;font-family:'Syne',sans-serif;transition:all .2s;margin-top:8px;letter-spacing:-.01em}
 .form-submit:hover{background:var(--acc2)}
+.form-error{display:none;color:#ff5c5c;font-size:12px;font-weight:500;margin-bottom:8px;padding:8px 12px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:7px;}
 .form-divider{display:flex;align-items:center;gap:12px;margin:20px 0;font-size:12px;color:var(--txs)}
 .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .social-btn{width:100%;padding:12px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--txm);font-size:14px;font-family:'Syne',sans-serif;cursor:none;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;margin-bottom:10px}
@@ -715,17 +716,19 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
       <button class="modal-tab" id="tab-login" onclick="switchModalTab('login')">Connexion</button>
     </div>
     <div id="modal-form-signup">
-      <div class="form-group"><label>Nom complet</label><input type="text" placeholder="Jean Dupont" autocomplete="name"/></div>
-      <div class="form-group"><label>Email professionnel</label><input type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
-      <div class="form-group"><label>Mot de passe</label><input type="password" placeholder="8 caractères minimum"/></div>
+      <div class="form-group"><label>Nom complet</label><input id="signup-name" type="text" placeholder="Jean Dupont" autocomplete="name"/></div>
+      <div class="form-group"><label>Email professionnel</label><input id="signup-email" type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Mot de passe</label><input id="signup-password" type="password" placeholder="8 caractères minimum"/></div>
+      <div class="form-error" id="signup-error"></div>
       <button class="form-submit" onclick="handleSignup()">Créer mon compte gratuit →</button>
       <div class="form-divider">ou continuer avec</div>
       <button class="social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.5 8.18c0-.57-.05-1.12-.15-1.64H8v3.1h4.19a3.58 3.58 0 01-1.56 2.35v1.95h2.52c1.48-1.36 2.35-3.37 2.35-5.76z" fill="#4285F4"/><path d="M8 16c2.1 0 3.87-.7 5.16-1.89l-2.52-1.95c-.7.47-1.6.74-2.64.74-2.03 0-3.75-1.37-4.36-3.21H1.06v2.01A8 8 0 008 16z" fill="#34A853"/><path d="M3.64 9.69A4.8 4.8 0 013.39 8c0-.59.1-1.16.25-1.69V4.3H1.06A8 8 0 000 8c0 1.29.31 2.51.86 3.59l2.78-1.9z" fill="#FBBC04"/><path d="M8 3.18c1.14 0 2.17.39 2.97 1.16l2.23-2.23A8 8 0 001.06 4.3l2.58 2.01C4.25 4.55 5.97 3.18 8 3.18z" fill="#EA4335"/></svg>Continuer avec Google</button>
       <div class="modal-terms">En créant un compte vous acceptez nos <a href="#">Conditions d'utilisation</a> et notre <a href="#">Politique de confidentialité</a>.</div>
     </div>
     <div id="modal-form-login" style="display:none">
-      <div class="form-group"><label>Email</label><input type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
-      <div class="form-group"><label>Mot de passe</label><input type="password" placeholder="Votre mot de passe"/></div>
+      <div class="form-group"><label>Email</label><input id="login-email" type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Mot de passe</label><input id="login-password" type="password" placeholder="Votre mot de passe"/></div>
+      <div class="form-error" id="login-error"></div>
       <button class="form-submit" onclick="handleLogin()">Se connecter →</button>
       <div class="form-divider">ou continuer avec</div>
       <button class="social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.5 8.18c0-.57-.05-1.12-.15-1.64H8v3.1h4.19a3.58 3.58 0 01-1.56 2.35v1.95h2.52c1.48-1.36 2.35-3.37 2.35-5.76z" fill="#4285F4"/><path d="M8 16c2.1 0 3.87-.7 5.16-1.89l-2.52-1.95c-.7.47-1.6.74-2.64.74-2.03 0-3.75-1.37-4.36-3.21H1.06v2.01A8 8 0 008 16z" fill="#34A853"/><path d="M3.64 9.69A4.8 4.8 0 013.39 8c0-.59.1-1.16.25-1.69V4.3H1.06A8 8 0 000 8c0 1.29.31 2.51.86 3.59l2.78-1.9z" fill="#FBBC04"/><path d="M8 3.18c1.14 0 2.17.39 2.97 1.16l2.23-2.23A8 8 0 001.06 4.3l2.58 2.01C4.25 4.55 5.97 3.18 8 3.18z" fill="#EA4335"/></svg>Continuer avec Google</button>
@@ -761,8 +764,36 @@ function toggleFaq(q){const item=q.parentElement;const wasOpen=item.classList.co
 function openModal(tab){document.getElementById('modal-bg').classList.add('open');switchModalTab(tab);}
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function switchModalTab(tab){document.getElementById('tab-signup').classList.toggle('active',tab==='signup');document.getElementById('tab-login').classList.toggle('active',tab==='login');document.getElementById('modal-form-signup').style.display=tab==='signup'?'block':'none';document.getElementById('modal-form-login').style.display=tab==='login'?'block':'none';document.getElementById('modal-title').textContent=tab==='signup'?'Créer un compte':'Bon retour !';document.getElementById('modal-sub').textContent=tab==='signup'?'Commencez gratuitement. Aucune carte requise.':'Connectez-vous à votre espace NetDiagram.';}
-function handleSignup(){closeModal();window.open('schema-reseau-v2.html','_blank');}
-function handleLogin(){closeModal();window.open('schema-reseau-v2.html','_blank');}
+async function hashPassword(pw){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw+'nd_s4lt_2024'));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function clearErr(id){const el=document.getElementById(id);el.textContent='';el.style.display='none';}
+async function handleSignup(){
+  const name=document.getElementById('signup-name').value.trim();
+  const email=document.getElementById('signup-email').value.trim();
+  const pw=document.getElementById('signup-password').value;
+  if(!name){showErr('signup-error','Veuillez entrer votre nom complet.');return;}
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('signup-error','Veuillez entrer un email valide.');return;}
+  if(!pw||pw.length<8){showErr('signup-error','Le mot de passe doit contenir au moins 8 caractères.');return;}
+  const users=JSON.parse(localStorage.getItem('nd_users')||'[]');
+  if(users.find(u=>u.email===email)){showErr('signup-error','Cet email est déjà utilisé. Connectez-vous.');return;}
+  const hash=await hashPassword(pw);
+  users.push({name,email,hash,createdAt:Date.now()});
+  localStorage.setItem('nd_users',JSON.stringify(users));
+  localStorage.setItem('nd_session',JSON.stringify({email,name,exp:Date.now()+7*24*60*60*1000}));
+  clearErr('signup-error');closeModal();window.open('schema-reseau-v2.html','_blank');
+}
+async function handleLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-password').value;
+  if(!email){showErr('login-error','Veuillez entrer votre email.');return;}
+  if(!pw){showErr('login-error','Veuillez entrer votre mot de passe.');return;}
+  const users=JSON.parse(localStorage.getItem('nd_users')||'[]');
+  const hash=await hashPassword(pw);
+  const user=users.find(u=>u.email===email&&u.hash===hash);
+  if(!user){showErr('login-error','Email ou mot de passe incorrect.');return;}
+  localStorage.setItem('nd_session',JSON.stringify({email,name:user.name,exp:Date.now()+7*24*60*60*1000}));
+  clearErr('login-error');closeModal();window.open('schema-reseau-v2.html','_blank');
+}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 </script>
 </body>
