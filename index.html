@@ -764,34 +764,42 @@ function toggleFaq(q){const item=q.parentElement;const wasOpen=item.classList.co
 function openModal(tab){document.getElementById('modal-bg').classList.add('open');switchModalTab(tab);}
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function switchModalTab(tab){document.getElementById('tab-signup').classList.toggle('active',tab==='signup');document.getElementById('tab-login').classList.toggle('active',tab==='login');document.getElementById('modal-form-signup').style.display=tab==='signup'?'block':'none';document.getElementById('modal-form-login').style.display=tab==='login'?'block':'none';document.getElementById('modal-title').textContent=tab==='signup'?'Créer un compte':'Bon retour !';document.getElementById('modal-sub').textContent=tab==='signup'?'Commencez gratuitement. Aucune carte requise.':'Connectez-vous à votre espace NetDiagram.';}
-async function hashPassword(pw){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw+'nd_s4lt_2024'));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
-function clearErr(id){const el=document.getElementById(id);el.textContent='';el.style.display='none';}
-async function handleSignup(){
-  const name=document.getElementById('signup-name').value.trim();
-  const email=document.getElementById('signup-email').value.trim();
-  const pw=document.getElementById('signup-password').value;
+function hashPassword(pw){
+  // Hash synchrone basé sur un simple algorithme djb2 avec sel — suffisant pour du localStorage côté client
+  var str='nd_s4lt_2024:'+pw;var h=5381;
+  for(var i=0;i<str.length;i++){h=((h<<5)+h)^str.charCodeAt(i);h=h>>>0;}
+  // Deuxième passe pour allonger le résultat
+  var str2=pw+':nd_s4lt_2024';var h2=52711;
+  for(var i=0;i<str2.length;i++){h2=((h2<<5)+h2)^str2.charCodeAt(i);h2=h2>>>0;}
+  return h.toString(16).padStart(8,'0')+h2.toString(16).padStart(8,'0');
+}
+function showErr(id,msg){var el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function clearErr(id){var el=document.getElementById(id);el.textContent='';el.style.display='none';}
+function handleSignup(){
+  var name=document.getElementById('signup-name').value.trim();
+  var email=document.getElementById('signup-email').value.trim();
+  var pw=document.getElementById('signup-password').value;
   if(!name){showErr('signup-error','Veuillez entrer votre nom complet.');return;}
   if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('signup-error','Veuillez entrer un email valide.');return;}
   if(!pw||pw.length<8){showErr('signup-error','Le mot de passe doit contenir au moins 8 caractères.');return;}
-  const users=JSON.parse(localStorage.getItem('nd_users')||'[]');
-  if(users.find(u=>u.email===email)){showErr('signup-error','Cet email est déjà utilisé. Connectez-vous.');return;}
-  const hash=await hashPassword(pw);
-  users.push({name,email,hash,createdAt:Date.now()});
+  var users=JSON.parse(localStorage.getItem('nd_users')||'[]');
+  if(users.find(function(u){return u.email===email;})){showErr('signup-error','Cet email est déjà utilisé. Connectez-vous.');return;}
+  var hash=hashPassword(pw);
+  users.push({name:name,email:email,hash:hash,createdAt:Date.now()});
   localStorage.setItem('nd_users',JSON.stringify(users));
-  localStorage.setItem('nd_session',JSON.stringify({email,name,exp:Date.now()+7*24*60*60*1000}));
+  localStorage.setItem('nd_session',JSON.stringify({email:email,name:name,exp:Date.now()+7*24*60*60*1000}));
   clearErr('signup-error');closeModal();window.open('schema-reseau-v2.html','_blank');
 }
-async function handleLogin(){
-  const email=document.getElementById('login-email').value.trim();
-  const pw=document.getElementById('login-password').value;
+function handleLogin(){
+  var email=document.getElementById('login-email').value.trim();
+  var pw=document.getElementById('login-password').value;
   if(!email){showErr('login-error','Veuillez entrer votre email.');return;}
   if(!pw){showErr('login-error','Veuillez entrer votre mot de passe.');return;}
-  const users=JSON.parse(localStorage.getItem('nd_users')||'[]');
-  const hash=await hashPassword(pw);
-  const user=users.find(u=>u.email===email&&u.hash===hash);
+  var users=JSON.parse(localStorage.getItem('nd_users')||'[]');
+  var hash=hashPassword(pw);
+  var user=users.find(function(u){return u.email===email&&u.hash===hash;});
   if(!user){showErr('login-error','Email ou mot de passe incorrect.');return;}
-  localStorage.setItem('nd_session',JSON.stringify({email,name:user.name,exp:Date.now()+7*24*60*60*1000}));
+  localStorage.setItem('nd_session',JSON.stringify({email:email,name:user.name,exp:Date.now()+7*24*60*60*1000}));
   clearErr('login-error');closeModal();window.open('schema-reseau-v2.html','_blank');
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
