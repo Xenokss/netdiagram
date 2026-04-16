@@ -104,6 +104,57 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:1
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 .blink{animation:blink 1.4s ease-in-out infinite}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Initialiser Supabase depuis les données de session
+const SURL = localStorage.getItem('nd_supaurl');
+const SKEY = localStorage.getItem('nd_supakey');
+const TOKEN = localStorage.getItem('nd_token');
+let sbClient = null, currentUser = null;
+
+if (SURL && SKEY) {
+  const { createClient } = supabase;
+  sbClient = createClient(SURL, SKEY);
+  if (TOKEN) {
+    sbClient.auth.setSession({ access_token: TOKEN, refresh_token: TOKEN })
+      .then(({ data }) => { currentUser = data?.user; });
+  }
+}
+
+// Sauvegarder le schéma actuel dans le cloud
+async function saveToCloud(schemaData) {
+  if (!sbClient || !currentUser) {
+    return { error: 'Non connecté' };
+  }
+  const { data, error } = await sbClient
+    .from('schemas')
+    .upsert({
+      user_id: currentUser.id,
+      title: schemaData.title || 'Schéma sans titre',
+      data: schemaData,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' })
+    .select()
+    .single();
+  return { data, error };
+}
+
+// Charger tous les schémas de l'utilisateur
+async function loadFromCloud() {
+  if (!sbClient || !currentUser) return [];
+  const { data, error } = await sbClient
+    .from('schemas')
+    .select('*')
+    .order('updated_at', { ascending: false });
+  return error ? [] : data;
+}
+
+// Supprimer un schéma
+async function deleteFromCloud(id) {
+  if (!sbClient) return;
+  await sbClient.from('schemas').delete().eq('id', id);
+}
+</script>
 </head>
 <body>
 <div id="app" class="lm">
