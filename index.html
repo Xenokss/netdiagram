@@ -205,7 +205,6 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
 .form-group input::placeholder{color:var(--txs)}
 .form-submit{width:100%;padding:14px;background:var(--acc);border:none;border-radius:9px;color:#0a0a09;font-size:15px;font-weight:700;cursor:none;font-family:'Syne',sans-serif;transition:all .2s;margin-top:8px;letter-spacing:-.01em}
 .form-submit:hover{background:var(--acc2)}
-.form-error{display:none;color:#ff5c5c;font-size:12px;font-weight:500;margin-bottom:8px;padding:8px 12px;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);border-radius:7px;}
 .form-divider{display:flex;align-items:center;gap:12px;margin:20px 0;font-size:12px;color:var(--txs)}
 .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .social-btn{width:100%;padding:12px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--txm);font-size:14px;font-family:'Syne',sans-serif;cursor:none;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;margin-bottom:10px}
@@ -243,7 +242,6 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
   .modal{padding:32px 24px}
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -717,19 +715,17 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
       <button class="modal-tab" id="tab-login" onclick="switchModalTab('login')">Connexion</button>
     </div>
     <div id="modal-form-signup">
-      <div class="form-group"><label>Nom complet</label><input id="signup-name" type="text" placeholder="Jean Dupont" autocomplete="name"/></div>
-      <div class="form-group"><label>Email professionnel</label><input id="signup-email" type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
-      <div class="form-group"><label>Mot de passe</label><input id="signup-password" type="password" placeholder="8 caractères minimum"/></div>
-      <div class="form-error" id="signup-error"></div>
+      <div class="form-group"><label>Nom complet</label><input type="text" placeholder="Jean Dupont" autocomplete="name"/></div>
+      <div class="form-group"><label>Email professionnel</label><input type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" placeholder="8 caractères minimum"/></div>
       <button class="form-submit" onclick="handleSignup()">Créer mon compte gratuit →</button>
       <div class="form-divider">ou continuer avec</div>
       <button class="social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.5 8.18c0-.57-.05-1.12-.15-1.64H8v3.1h4.19a3.58 3.58 0 01-1.56 2.35v1.95h2.52c1.48-1.36 2.35-3.37 2.35-5.76z" fill="#4285F4"/><path d="M8 16c2.1 0 3.87-.7 5.16-1.89l-2.52-1.95c-.7.47-1.6.74-2.64.74-2.03 0-3.75-1.37-4.36-3.21H1.06v2.01A8 8 0 008 16z" fill="#34A853"/><path d="M3.64 9.69A4.8 4.8 0 013.39 8c0-.59.1-1.16.25-1.69V4.3H1.06A8 8 0 000 8c0 1.29.31 2.51.86 3.59l2.78-1.9z" fill="#FBBC04"/><path d="M8 3.18c1.14 0 2.17.39 2.97 1.16l2.23-2.23A8 8 0 001.06 4.3l2.58 2.01C4.25 4.55 5.97 3.18 8 3.18z" fill="#EA4335"/></svg>Continuer avec Google</button>
       <div class="modal-terms">En créant un compte vous acceptez nos <a href="#">Conditions d'utilisation</a> et notre <a href="#">Politique de confidentialité</a>.</div>
     </div>
     <div id="modal-form-login" style="display:none">
-      <div class="form-group"><label>Email</label><input id="login-email" type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
-      <div class="form-group"><label>Mot de passe</label><input id="login-password" type="password" placeholder="Votre mot de passe"/></div>
-      <div class="form-error" id="login-error"></div>
+      <div class="form-group"><label>Email</label><input type="email" placeholder="jean@entreprise.com" autocomplete="email"/></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" placeholder="Votre mot de passe"/></div>
       <button class="form-submit" onclick="handleLogin()">Se connecter →</button>
       <div class="form-divider">ou continuer avec</div>
       <button class="social-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.5 8.18c0-.57-.05-1.12-.15-1.64H8v3.1h4.19a3.58 3.58 0 01-1.56 2.35v1.95h2.52c1.48-1.36 2.35-3.37 2.35-5.76z" fill="#4285F4"/><path d="M8 16c2.1 0 3.87-.7 5.16-1.89l-2.52-1.95c-.7.47-1.6.74-2.64.74-2.03 0-3.75-1.37-4.36-3.21H1.06v2.01A8 8 0 008 16z" fill="#34A853"/><path d="M3.64 9.69A4.8 4.8 0 013.39 8c0-.59.1-1.16.25-1.69V4.3H1.06A8 8 0 000 8c0 1.29.31 2.51.86 3.59l2.78-1.9z" fill="#FBBC04"/><path d="M8 3.18c1.14 0 2.17.39 2.97 1.16l2.23-2.23A8 8 0 001.06 4.3l2.58 2.01C4.25 4.55 5.97 3.18 8 3.18z" fill="#EA4335"/></svg>Continuer avec Google</button>
@@ -738,6 +734,7 @@ footer{border-top:1px solid var(--border);padding:48px;display:flex;align-items:
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // Cursor
 const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
@@ -765,72 +762,99 @@ function toggleFaq(q){const item=q.parentElement;const wasOpen=item.classList.co
 function openModal(tab){document.getElementById('modal-bg').classList.add('open');switchModalTab(tab);}
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function switchModalTab(tab){document.getElementById('tab-signup').classList.toggle('active',tab==='signup');document.getElementById('tab-login').classList.toggle('active',tab==='login');document.getElementById('modal-form-signup').style.display=tab==='signup'?'block':'none';document.getElementById('modal-form-login').style.display=tab==='login'?'block':'none';document.getElementById('modal-title').textContent=tab==='signup'?'Créer un compte':'Bon retour !';document.getElementById('modal-sub').textContent=tab==='signup'?'Commencez gratuitement. Aucune carte requise.':'Connectez-vous à votre espace NetDiagram.';}
-function hashPassword(pw){
-  // Hash synchrone basé sur un simple algorithme djb2 avec sel — suffisant pour du localStorage côté client
-  var str='nd_s4lt_2024:'+pw;var h=5381;
-  for(var i=0;i<str.length;i++){h=((h<<5)+h)^str.charCodeAt(i);h=h>>>0;}
-  // Deuxième passe pour allonger le résultat
-  var str2=pw+':nd_s4lt_2024';var h2=52711;
-  for(var i=0;i<str2.length;i++){h2=((h2<<5)+h2)^str2.charCodeAt(i);h2=h2>>>0;}
-  return h.toString(16).padStart(8,'0')+h2.toString(16).padStart(8,'0');
-}
-function showErr(id,msg){var el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
-function clearErr(id){var el=document.getElementById(id);el.textContent='';el.style.display='none';}
-// ← Remplacez par vos vraies valeurs Supabase
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SUPABASE — Remplacez ces deux valeurs
+// par vos clés récupérées dans Supabase
+// Settings → API
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const SUPA_URL = https://fgccusolrrcvhwlinwia.supabase.co;
 const SUPA_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnY2N1c29scnJjdmh3bGlud2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNTQ4ODAsImV4cCI6MjA5MTgzMDg4MH0.4EcreUYR_TDLnoXduLPAqT4tA5xAPlUAE1cb66F6NSI;
+
 const { createClient } = supabase;
 const sb = createClient(SUPA_URL, SUPA_KEY);
 
 async function handleSignup() {
-  const name = document.querySelector('#modal-form-signup input[type=text]').value;
-  const email = document.querySelector('#modal-form-signup input[type=email]').value;
-  const password = document.querySelector('#modal-form-signup input[type=password]').value;
+  const name     = document.querySelector('#modal-form-signup input[type=text]')?.value?.trim() || '';
+  const email    = document.querySelector('#modal-form-signup input[type=email]')?.value?.trim() || '';
+  const password = document.querySelector('#modal-form-signup input[type=password]')?.value || '';
 
-  if (!email || !password) { alert('Remplissez email et mot de passe.'); return; }
-  if (password.length < 6) { alert('Mot de passe trop court (min 6 caractères).'); return; }
+  if (!email)         { alert('Veuillez entrer votre adresse email.'); return; }
+  if (!password)      { alert('Veuillez entrer un mot de passe.'); return; }
+  if (password.length < 6) { alert('Le mot de passe doit faire au moins 6 caractères.'); return; }
 
   const btn = document.querySelector('#modal-form-signup .form-submit');
-  btn.textContent = 'Création du compte…'; btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'Création du compte…';
+  btn.disabled = true;
 
-  const { error } = await sb.auth.signUp({
-    email, password,
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password,
     options: { data: { full_name: name } }
   });
 
-  btn.textContent = 'Créer mon compte gratuit →'; btn.disabled = false;
+  btn.textContent = orig;
+  btn.disabled = false;
 
-  if (error) { alert('Erreur : ' + error.message); return; }
+  if (error) {
+    const msgs = {
+      'User already registered': 'Un compte existe déjà avec cet email. Connectez-vous.',
+      'Password should be at least 6 characters': 'Mot de passe trop court (minimum 6 caractères).',
+      'Unable to validate email address: invalid format': 'Adresse email invalide.'
+    };
+    alert(msgs[error.message] || 'Erreur : ' + error.message);
+    return;
+  }
 
-  closeModal();
   localStorage.setItem('nd_supaurl', SUPA_URL);
   localStorage.setItem('nd_supakey', SUPA_KEY);
+  if (data?.session) {
+    localStorage.setItem('nd_token',   data.session.access_token);
+    localStorage.setItem('nd_refresh', data.session.refresh_token);
+    localStorage.setItem('nd_user',    JSON.stringify({ id: data.user.id, email: data.user.email, name }));
+  }
+
+  closeModal();
   window.open('schema-reseau-v2.html', '_blank');
 }
 
 async function handleLogin() {
-  const email = document.querySelector('#modal-form-login input[type=email]').value;
-  const password = document.querySelector('#modal-form-login input[type=password]').value;
+  const email    = document.querySelector('#modal-form-login input[type=email]')?.value?.trim() || '';
+  const password = document.querySelector('#modal-form-login input[type=password]')?.value || '';
 
-  if (!email || !password) { alert('Remplissez email et mot de passe.'); return; }
+  if (!email)    { alert('Veuillez entrer votre adresse email.'); return; }
+  if (!password) { alert('Veuillez entrer votre mot de passe.'); return; }
 
   const btn = document.querySelector('#modal-form-login .form-submit');
-  btn.textContent = 'Connexion…'; btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'Connexion…';
+  btn.disabled = true;
 
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-  btn.textContent = 'Se connecter →'; btn.disabled = false;
+  btn.textContent = orig;
+  btn.disabled = false;
 
-  if (error) { alert('Erreur : ' + error.message); return; }
+  if (error) {
+    const msgs = {
+      'Invalid login credentials': 'Email ou mot de passe incorrect.',
+      'Email not confirmed': 'Confirmez votre email avant de vous connecter.'
+    };
+    alert(msgs[error.message] || 'Erreur : ' + error.message);
+    return;
+  }
 
-  localStorage.setItem('nd_token', data.session.access_token);
   localStorage.setItem('nd_supaurl', SUPA_URL);
   localStorage.setItem('nd_supakey', SUPA_KEY);
+  localStorage.setItem('nd_token',   data.session.access_token);
+  localStorage.setItem('nd_refresh', data.session.refresh_token);
+  localStorage.setItem('nd_user',    JSON.stringify({ id: data.user.id, email: data.user.email }));
+
   closeModal();
   window.open('schema-reseau-v2.html', '_blank');
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 </script>
 </body>
 </html>

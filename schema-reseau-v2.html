@@ -4,8 +4,70 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Éditeur de schémas réseau — v2</title>
-<script>(function(){try{var s=JSON.parse(localStorage.getItem('nd_session'));if(!s||s.exp<Date.now()){localStorage.removeItem('nd_session');window.location.replace('index.html');}}catch(e){window.location.replace('index.html');}})();</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Initialisation Supabase depuis la session
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const _SURL  = localStorage.getItem('nd_supaurl');
+const _SKEY  = localStorage.getItem('nd_supakey');
+const _TOKEN = localStorage.getItem('nd_token');
+const _REFRESH = localStorage.getItem('nd_refresh');
+let sbClient = null, currentUser = null;
+
+if (_SURL && _SKEY) {
+  const { createClient } = supabase;
+  sbClient = createClient(_SURL, _SKEY);
+  if (_TOKEN && _REFRESH) {
+    sbClient.auth.setSession({ access_token: _TOKEN, refresh_token: _REFRESH })
+      .then(({ data, error }) => {
+        if (!error && data?.user) {
+          currentUser = data.user;
+          showUserBadge(data.user.email);
+        }
+      });
+  }
+}
+
+function showUserBadge(email) {
+  const badge = document.createElement('div');
+  badge.id = 'user-badge';
+  badge.style.cssText = 'position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:var(--pbg);border:0.5px solid var(--pbd);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--txs);z-index:50;display:flex;align-items:center;gap:8px';
+  badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#3df5a0;flex-shrink:0"></span><span>${email}</span><button onclick="logout()" style="background:transparent;border:none;color:var(--txs);cursor:pointer;font-size:11px;padding:0;margin-left:4px">Déconnexion</button>`;
+  document.body.appendChild(badge);
+}
+
+async function logout() {
+  if (sbClient) await sbClient.auth.signOut();
+  ['nd_token','nd_refresh','nd_user'].forEach(k => localStorage.removeItem(k));
+  document.getElementById('user-badge')?.remove();
+  currentUser = null;
+}
+
+// Sauvegarder dans le cloud
+async function saveToCloud(schemaData) {
+  if (!sbClient || !currentUser) return { error: 'Non connecté' };
+  const existing = await sbClient.from('schemas').select('id').eq('user_id', currentUser.id).eq('title', schemaData.title || 'Schéma sans titre').maybeSingle();
+  if (existing.data?.id) {
+    return await sbClient.from('schemas').update({ title: schemaData.title || 'Schéma sans titre', data: schemaData, updated_at: new Date().toISOString() }).eq('id', existing.data.id);
+  }
+  return await sbClient.from('schemas').insert({ user_id: currentUser.id, title: schemaData.title || 'Schéma sans titre', data: schemaData });
+}
+
+// Charger tous les schémas de l'utilisateur
+async function loadFromCloud() {
+  if (!sbClient || !currentUser) return [];
+  const { data, error } = await sbClient.from('schemas').select('*').order('updated_at', { ascending: false });
+  return error ? [] : data;
+}
+
+// Supprimer un schéma cloud
+async function deleteFromCloud(id) {
+  if (!sbClient) return;
+  await sbClient.from('schemas').delete().eq('id', id);
+}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -104,57 +166,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:1
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
 .blink{animation:blink 1.4s ease-in-out infinite}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-// Initialiser Supabase depuis les données de session
-const SURL = localStorage.getItem('nd_supaurl');
-const SKEY = localStorage.getItem('nd_supakey');
-const TOKEN = localStorage.getItem('nd_token');
-let sbClient = null, currentUser = null;
-
-if (SURL && SKEY) {
-  const { createClient } = supabase;
-  sbClient = createClient(SURL, SKEY);
-  if (TOKEN) {
-    sbClient.auth.setSession({ access_token: TOKEN, refresh_token: TOKEN })
-      .then(({ data }) => { currentUser = data?.user; });
-  }
-}
-
-// Sauvegarder le schéma actuel dans le cloud
-async function saveToCloud(schemaData) {
-  if (!sbClient || !currentUser) {
-    return { error: 'Non connecté' };
-  }
-  const { data, error } = await sbClient
-    .from('schemas')
-    .upsert({
-      user_id: currentUser.id,
-      title: schemaData.title || 'Schéma sans titre',
-      data: schemaData,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' })
-    .select()
-    .single();
-  return { data, error };
-}
-
-// Charger tous les schémas de l'utilisateur
-async function loadFromCloud() {
-  if (!sbClient || !currentUser) return [];
-  const { data, error } = await sbClient
-    .from('schemas')
-    .select('*')
-    .order('updated_at', { ascending: false });
-  return error ? [] : data;
-}
-
-// Supprimer un schéma
-async function deleteFromCloud(id) {
-  if (!sbClient) return;
-  await sbClient.from('schemas').delete().eq('id', id);
-}
-</script>
 </head>
 <body>
 <div id="app" class="lm">
@@ -424,13 +435,13 @@ function updateMM(){const mc=document.getElementById('mmcanvas');mc.width=130;mc
 
 function svgToCanvas(cb){const r=sv.getBoundingClientRect();const clone=sv.cloneNode(true);clone.setAttribute('xmlns','http://www.w3.org/2000/svg');clone.setAttribute('width',r.width);clone.setAttribute('height',r.height);clone.querySelectorAll('path[stroke-dasharray="14,90"]').forEach(p=>p.remove());clone.querySelectorAll('#anchg *').forEach(p=>p.remove());const st=document.createElement('style');st.textContent='text{font-family:sans-serif}';clone.insertBefore(st,clone.firstChild);const s=new XMLSerializer().serializeToString(clone);const blob=new Blob([s],{type:'image/svg+xml'});const url=URL.createObjectURL(blob);const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=r.width*2;c.height=r.height*2;const ctx=c.getContext('2d');ctx.fillStyle=isDark?'#181818':'#f4f4f2';ctx.fillRect(0,0,c.width,c.height);ctx.scale(2,2);ctx.drawImage(img,0,0,r.width,r.height);const done=()=>{URL.revokeObjectURL(url);cb(c);};if(S.logo){const li=new Image();li.onload=()=>{const lw2=100,lh2=40;ctx.globalAlpha=.75;ctx.drawImage(li,r.width-lw2-14,r.height-lh2-14,lw2,lh2);ctx.globalAlpha=1;done();};li.onerror=done;li.src=S.logo;}else done();};img.src=url;}
 function doExp(fmt){svgToCanvas(c=>{if(fmt==='pdf'){const{jsPDF}=window.jspdf;const r=sv.getBoundingClientRect();const pdf=new jsPDF({orientation:'landscape',unit:'px',format:[r.width,r.height]});pdf.addImage(c.toDataURL('image/jpeg',.95),'JPEG',0,0,r.width,r.height);pdf.save(`${S.title||'schema'}.pdf`);}else{const a=document.createElement('a');a.download=`${S.title||'schema'}.${fmt}`;a.href=c.toDataURL(fmt==='jpg'?'image/jpeg':'image/png',.95);a.click();}});}
-function saveJSON(){const blob=new Blob([JSON.stringify({...S,_v:3},null,2)],{type:'application/json'});const a=document.createElement('a');a.download=`${S.title||'schema'}.json`;a.href=URL.createObjectURL(blob);a.click();try{const saves=JSON.parse(localStorage.getItem('nds')||'[]');saves.unshift({name:S.title||'Sans titre',date:new Date().toLocaleDateString('fr'),data:JSON.stringify(S)});localStorage.setItem('nds',JSON.stringify(saves.slice(0,10)));}catch(e){}}
+function saveJSON(){const blob=new Blob([JSON.stringify({...S,_v:3},null,2)],{type:'application/json'});const a=document.createElement('a');a.download=`${S.title||'schema'}.json`;a.href=URL.createObjectURL(blob);a.click();if(sbClient&&currentUser){const btn=document.getElementById('ep-save');const orig=btn?.textContent;if(btn)btn.textContent='Sauvegarde cloud…';saveToCloud(S).then(({error})=>{if(btn)btn.textContent=error?'Erreur ✗':'Sauvegardé ✓';setTimeout(()=>{if(btn)btn.textContent=orig;},2000);});}try{const saves=JSON.parse(localStorage.getItem('nds')||'[]');saves.unshift({name:S.title||'Sans titre',date:new Date().toLocaleDateString('fr'),data:JSON.stringify(S)});localStorage.setItem('nds',JSON.stringify(saves.slice(0,10)));}catch(e){}}
 
 const sbody=document.getElementById('sbody');
 function switchTab(t){document.querySelectorAll('.sbt').forEach(x=>x.classList.remove('on'));document.getElementById('tab-'+t).classList.add('on');if(t==='el')renderElems();else if(t==='tmpl')renderTmpls();else renderSaves();}
 function renderElems(){sbody.innerHTML='';const sh=document.createElement('div');sh.style.cssText='padding:5px;border-bottom:0.5px solid var(--pbd)';sh.innerHTML='<input id="srch" placeholder="Rechercher..." style="width:100%;border:0.5px solid var(--pbd);border-radius:5px;padding:3px 7px;font-size:10px;background:var(--cbg);color:var(--tx);font-family:inherit;outline:none"/>';sbody.appendChild(sh);const cats=[...new Set(ELEMS.map(e=>e.cat))];cats.forEach(cat=>{const hd=document.createElement('div');hd.className='cat-hd';hd.textContent=cat;sbody.appendChild(hd);ELEMS.filter(e=>e.cat===cat).forEach(el=>{const div=document.createElement('div');div.className='eli';div.draggable=true;div.innerHTML=`<svg viewBox="0 0 28 28" width="24" height="24" style="flex-shrink:0">${el.svg}</svg><span>${el.label}</span>`;div.addEventListener('dragstart',e=>e.dataTransfer.setData('type',el.type));sbody.appendChild(div);});});document.getElementById('srch').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.eli').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'flex':'none';});});}
 function renderTmpls(){sbody.innerHTML='';const templates=[{name:'Réseau PME',desc:'Firewall, routeur, switch, serveurs',load:loadPME},{name:'Architecture 3-tiers',desc:'Web, App, BDD avec DMZ',load:load3tier},{name:'Réseau domestique',desc:'Box, WiFi, NAS, appareils',load:loadHome}];templates.forEach(t=>{const div=document.createElement('div');div.className='tmi';div.innerHTML=`<div class="tmt">${t.name}</div><div class="tmd">${t.desc}</div>`;div.addEventListener('click',()=>{if(S.nodes.length&&!confirm('Charger ce template ?'))return;saveH();t.load();render();setMode('select');setTimeout(fitView,50);});sbody.appendChild(div);});}
-function renderSaves(){sbody.innerHTML='';try{const saves=JSON.parse(localStorage.getItem('nds')||'[]');if(!saves.length){const p=document.createElement('p');p.className='hint';p.style.padding='8px';p.textContent='Aucune sauvegarde. Utilisez Export > Sauvegarder JSON.';sbody.appendChild(p);return;}saves.forEach(sv=>{const div=document.createElement('div');div.className='tmi';div.innerHTML=`<div class="tmt">${sv.name}</div><div class="tmd">${sv.date}</div>`;div.addEventListener('click',()=>{if(S.nodes.length&&!confirm('Charger ?'))return;saveH();S=JSON.parse(sv.data);render();fitView();});sbody.appendChild(div);});}catch(e){}}
+async function renderSaves(){sbody.innerHTML='';if(sbClient&&currentUser){const loader=document.createElement('p');loader.className='hint';loader.style.padding='8px';loader.textContent='Chargement depuis le cloud…';sbody.appendChild(loader);const cloudSchemas=await loadFromCloud();sbody.innerHTML='';if(!cloudSchemas.length){const p=document.createElement('p');p.className='hint';p.style.padding='8px';p.textContent='Aucun schéma sauvegardé dans le cloud.';sbody.appendChild(p);}else{cloudSchemas.forEach(cs=>{const div=document.createElement('div');div.className='tmi';const date=new Date(cs.updated_at).toLocaleDateString('fr');div.innerHTML=`<div class="tmt">${cs.title}</div><div class="tmd">${date} — ☁ Cloud</div>`;div.addEventListener('click',()=>{if(S.nodes.length&&!confirm('Charger ce schéma ?'))return;saveH();S=cs.data;render();fitView();});sbody.appendChild(div);});}return;}try{const saves=JSON.parse(localStorage.getItem('nds')||'[]');if(!saves.length){const p=document.createElement('p');p.className='hint';p.style.padding='8px';p.textContent='Aucune sauvegarde locale. Utilisez Export > Sauvegarder JSON.';sbody.appendChild(p);return;}saves.forEach(sv=>{const div=document.createElement('div');div.className='tmi';div.innerHTML=`<div class="tmt">${sv.name}</div><div class="tmd">${sv.date}</div>`;div.addEventListener('click',()=>{if(S.nodes.length&&!confirm('Charger ?'))return;saveH();S=JSON.parse(sv.data);render();fitView();});sbody.appendChild(div);});}catch(e){}}
 
 function loadPME(){S={title:'Réseau PME',logo:null,tourSteps:[{nodeId:'f1',title:'Pare-feu périmétrique',desc:'Filtre le trafic entre Internet et le réseau interne. Règles ACL strictes.'},{nodeId:'r1',title:'Routeur cœur de réseau',desc:'Routage inter-VLAN et distribution vers LAN et serveurs.'},{nodeId:'sw1',title:'Switch LAN bureaux',desc:'Dessert tous les postes de travail en 1Gbps full-duplex.'},{nodeId:'s1',title:'Serveur Active Directory',desc:'Gestion des identités, authentification et GPO pour tout le domaine.'}],nodes:[{id:'i1',type:'internet',x:240,y:10,label:'Internet',status:'ok'},{id:'f1',type:'firewall',x:240,y:130,label:'Pare-feu',ip:'192.168.1.1',status:'ok',tourStep:1},{id:'r1',type:'router',x:240,y:250,label:'Routeur',ip:'192.168.1.254',status:'ok',tourStep:2},{id:'sw1',type:'switch',x:90,y:370,label:'Switch LAN',ip:'192.168.2.1',status:'ok',tourStep:3},{id:'sw2',type:'switch',x:400,y:370,label:'Switch SRV',ip:'192.168.3.1',status:'ok'},{id:'w1',type:'wifi',x:20,y:490,label:'WiFi',status:'warn'},{id:'p1',type:'pc',x:110,y:490,label:'PC 1',ip:'192.168.2.10',status:'ok'},{id:'p2',type:'pc',x:185,y:490,label:'PC 2',ip:'192.168.2.11',status:'down'},{id:'s1',type:'server',x:360,y:490,label:'Serveur AD',ip:'192.168.3.10',status:'ok',tourStep:4},{id:'s2',type:'server',x:450,y:490,label:'Serveur Web',ip:'192.168.3.11',status:'ok'},{id:'nas',type:'nas',x:540,y:490,label:'NAS Backup',ip:'192.168.3.20',status:'ok'}],connections:[{id:'c1',from:'i1',to:'f1',fromAnchor:'bottom',toAnchor:'top',color:'#E24B4A',type:'solid',strokeWidth:3,dir:'both',bw:'100Mbps'},{id:'c2',from:'f1',to:'r1',fromAnchor:'bottom',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:3,dir:'both',bw:'1Gbps'},{id:'c3',from:'r1',to:'sw1',fromAnchor:'left',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2.5,dir:'both'},{id:'c4',from:'r1',to:'sw2',fromAnchor:'right',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2.5,dir:'both'},{id:'c5',from:'sw1',to:'w1',fromAnchor:'left',toAnchor:'top',color:'#1D9E75',type:'dashed',strokeWidth:2,dir:'forward',proto:'WiFi'},{id:'c6',from:'sw1',to:'p1',fromAnchor:'bottom',toAnchor:'top',color:'#1D9E75',type:'solid',strokeWidth:2,dir:'forward'},{id:'c7',from:'sw1',to:'p2',fromAnchor:'bottom',toAnchor:'top',color:'#E24B4A',type:'dotted',strokeWidth:2,dir:'none'},{id:'c8',from:'sw2',to:'s1',fromAnchor:'bottom',toAnchor:'top',color:'#7F77DD',type:'solid',strokeWidth:2.5,dir:'both',vlan:'10'},{id:'c9',from:'sw2',to:'s2',fromAnchor:'bottom',toAnchor:'top',color:'#7F77DD',type:'solid',strokeWidth:2.5,dir:'forward',vlan:'20',proto:'HTTPS'},{id:'c10',from:'sw2',to:'nas',fromAnchor:'right',toAnchor:'top',color:'#888780',type:'dashed',strokeWidth:2,dir:'forward',bw:'10Gbps'}],zones:[{id:'z1',x:0,y:350,w:300,h:195,label:'LAN Bureaux',ci:0},{id:'z2',x:330,y:350,w:280,h:195,label:'Zone Serveurs',ci:4}],annots:[]};}
 function load3tier(){S={title:'Architecture 3-tiers',logo:null,tourSteps:[],nodes:[{id:'i1',type:'internet',x:200,y:10,label:'Internet'},{id:'f1',type:'firewall',x:200,y:110,label:'FW externe',ip:'10.0.0.1'},{id:'lb',type:'switch',x:200,y:210,label:'Load Balancer',ip:'10.0.1.1'},{id:'w1',type:'server',x:80,y:320,label:'Web 1',ip:'10.0.1.10'},{id:'w2',type:'server',x:200,y:320,label:'Web 2',ip:'10.0.1.11'},{id:'w3',type:'server',x:320,y:320,label:'Web 3',ip:'10.0.1.12'},{id:'f2',type:'firewall',x:200,y:420,label:'FW interne',ip:'10.0.2.1'},{id:'a1',type:'server',x:120,y:510,label:'App 1',ip:'10.0.2.10'},{id:'a2',type:'server',x:280,y:510,label:'App 2',ip:'10.0.2.11'},{id:'db',type:'datacenter',x:200,y:600,label:'BDD Cluster',ip:'10.0.3.1'}],connections:[{id:'c1',from:'i1',to:'f1',fromAnchor:'bottom',toAnchor:'top',color:'#E24B4A',type:'solid',strokeWidth:3,dir:'both'},{id:'c2',from:'f1',to:'lb',fromAnchor:'bottom',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2.5,dir:'both'},{id:'c3',from:'lb',to:'w1',fromAnchor:'bottom',toAnchor:'top',color:'#1D9E75',type:'solid',strokeWidth:2,dir:'forward'},{id:'c4',from:'lb',to:'w2',fromAnchor:'bottom',toAnchor:'top',color:'#1D9E75',type:'solid',strokeWidth:2,dir:'forward'},{id:'c5',from:'lb',to:'w3',fromAnchor:'bottom',toAnchor:'top',color:'#1D9E75',type:'solid',strokeWidth:2,dir:'forward'},{id:'c6',from:'w1',to:'f2',fromAnchor:'bottom',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2,dir:'both'},{id:'c7',from:'w2',to:'f2',fromAnchor:'bottom',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2,dir:'both'},{id:'c8',from:'w3',to:'f2',fromAnchor:'bottom',toAnchor:'top',color:'#378ADD',type:'solid',strokeWidth:2,dir:'both'},{id:'c9',from:'f2',to:'a1',fromAnchor:'bottom',toAnchor:'top',color:'#7F77DD',type:'solid',strokeWidth:2,dir:'both'},{id:'c10',from:'f2',to:'a2',fromAnchor:'bottom',toAnchor:'top',color:'#7F77DD',type:'solid',strokeWidth:2,dir:'both'},{id:'c11',from:'a1',to:'db',fromAnchor:'bottom',toAnchor:'top',color:'#EF9F27',type:'dashed',strokeWidth:2,dir:'both'},{id:'c12',from:'a2',to:'db',fromAnchor:'bottom',toAnchor:'top',color:'#EF9F27',type:'dashed',strokeWidth:2,dir:'both'}],zones:[{id:'z1',x:40,y:295,w:350,h:100,label:'DMZ Web',ci:1},{id:'z2',x:70,y:488,w:290,h:88,label:'Couche App',ci:4}],annots:[]};}
